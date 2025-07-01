@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <title>Bot IA Web Amigável</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Bot IA Web Amigável</h1>
+        <textarea id="pergunta" placeholder="Digite sua pergunta aqui..."></textarea>
+        <button id="btnPerguntar">Perguntar</button>
+        <div id="resposta"></div>
+        <div id="feedback" style="display:none;">
+            <p>Essa resposta ajudou?</p>
+            <button id="sim">Sim 👍</button>
+            <button id="nao">Não 👎</button>
+        </div>
+        <div id="correcao" style="display:none;">
+            <textarea id="resposta_correta" placeholder="Digite a resposta correta"></textarea>
+            <button id="enviarCorrecao">Enviar Correção</button>
+        </div>
+    </div>
+<script>
+    const btnPerguntar = document.getElementById("btnPerguntar");
+    const perguntaInput = document.getElementById("pergunta");
+    const respostaDiv = document.getElementById("resposta");
+    const feedbackDiv = document.getElementById("feedback");
+    const correcaoDiv = document.getElementById("correcao");
+    const respostaCorretaInput = document.getElementById("resposta_correta");
+    let ultimaPergunta = "";
+
+    btnPerguntar.onclick = async () => {
+        const pergunta = perguntaInput.value.trim();
+        if(!pergunta) return alert("Digite uma pergunta!");
+        respostaDiv.textContent = "Pensando... 🤔";
+        feedbackDiv.style.display = "none";
+        correcaoDiv.style.display = "none";
+        const res = await fetch("/perguntar", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ pergunta })
+        });
+        const data = await res.json();
+        respostaDiv.textContent = data.resposta;
+        feedbackDiv.style.display = "block";
+        ultimaPergunta = pergunta;
+    };
+
+    document.getElementById("sim").onclick = () => {
+        feedbackDiv.style.display = "none";
+        correcaoDiv.style.display = "none";
+        perguntaInput.value = "";
+        respostaDiv.textContent = "Que bom que ajudei! 😊";
+    };
+
+    document.getElementById("nao").onclick = () => {
+        feedbackDiv.style.display = "none";
+        correcaoDiv.style.display = "block";
+    };
+
+    document.getElementById("enviarCorrecao").onclick = async () => {
+        const resposta_correta = respostaCorretaInput.value.trim();
+        if(!resposta_correta) return alert("Digite a resposta correta!");
+        const res = await fetch("/feedback", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ pergunta: ultimaPergunta, resposta_correta })
+        });
+        const data = await res.json();
+        respostaDiv.textContent = "Obrigado pela correção! Aprendi com você! 🙏";
+        correcaoDiv.style.display = "none";
+        respostaCorretaInput.value = "";
+        perguntaInput.value = "";
+    };
+</script>
+</body>
+</html>
